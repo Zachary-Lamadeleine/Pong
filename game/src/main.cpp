@@ -2,6 +2,9 @@
 #include "raymath.h"
 #include "raygui.h"
 
+#include <chrono>
+#include <thread>
+
 constexpr float SCREEN_WIDTH = 1200.0f;
 constexpr float SCREEN_HEIGHT = 800.0f;
 constexpr Vector2 CENTER{ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f };
@@ -54,13 +57,16 @@ int main()
     paddle2_position.x = SCREEN_WIDTH * 0.95f;
     paddle1_position.y = paddle2_position.y = CENTER.y;
 
-    int test_score = 0;
+    int player1_score = 0;
+    int player2_score = 0;
+    float game_over_timer = 0.0f;
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Pong");
     InitAudioDevice();
     SetTargetFPS(60);
 
     Sound coin = LoadSound("./assets/audio/sound_coin.mp3");
+    Sound thud = LoadSound("./assets/audio/sound_thud.mp3");
 
     while (!WindowShouldClose())
     {
@@ -72,8 +78,12 @@ int main()
         if (IsKeyDown(KEY_S))
             paddle1_position.y += PADDLE_SPEED * dt;
 
-        // Mirror paddle 1 for now
-        paddle2_position.y = paddle1_position.y;
+        // Move paddle with key input
+        if (IsKeyDown(KEY_UP))
+            paddle2_position.y -= PADDLE_SPEED * dt;
+        if (IsKeyDown(KEY_DOWN))
+            paddle2_position.y += PADDLE_SPEED * dt;
+
 
         float phh = PADDLE_HEIGHT * 0.5f;
         paddle1_position.y = Clamp(paddle1_position.y, phh, SCREEN_HEIGHT - phh);
@@ -85,20 +95,64 @@ int main()
         Rectangle paddle1_rec = PaddleRec(paddle1_position);
         Rectangle paddle2_rec = PaddleRec(paddle2_position);
 
-        // TODO -- increment the scoring player's score after they've touched the ball and the ball goes too far right/left
-        test_score++;
-        if (ball_rec.x <= 0.0f || ball_rec.x + ball_rec.width >= SCREEN_WIDTH)
+        // player1
+        
+        if (ball_rec.x + ball_rec.width >= SCREEN_WIDTH)
         {
             ball_direction.x *= -1.0f;
+            player1_score++;
+            PlaySound(coin);
         }
+
+        // player2
+        if (ball_rec.x <= 0.0f)
+        {
+            ball_direction.x *= -1.0f;
+            player2_score++;
+            PlaySound(coin);
+        }
+
+        //Ball bounce
         if (ball_rec.y <= 0.0f || ball_rec.y + ball_rec.height >= SCREEN_HEIGHT)
         {
             ball_direction.y *= -1.0f;
         }
-        if (CheckCollisionRecs(ball_rec, paddle1_rec) || CheckCollisionRecs(ball_rec, paddle2_rec))
+
+        if (CheckCollisionRecs(ball_rec, paddle2_rec))
         {
             ball_direction.x *= -1.0f;
-            PlaySound(coin);
+            player2_score++;
+            PlaySound(thud);
+        }
+
+
+        if (CheckCollisionRecs(ball_rec, paddle1_rec))
+        {
+            ball_direction.x *= -1.0f;
+            player1_score++;
+            PlaySound(thud);
+        }
+
+        // check the players scores. Show the wins
+        if (player1_score >= 5 || player2_score >= 5)
+        {
+            game_over_timer += dt;
+            DrawText("Game Over!", SCREEN_WIDTH * 0.5f - MeasureText("Game Over!", 40) * 0.5f, SCREEN_HEIGHT * 0.5f - 20, 40, YELLOW);
+            if (player1_score >= 5)
+            {
+                DrawText("Player 1 Wins!", SCREEN_WIDTH * 0.5f - MeasureText("Player 1 Wins!", 30) * 0.5f, SCREEN_HEIGHT * 0.5f + 20, 30, RED);
+            }
+            if (player2_score >= 5)
+            {
+                DrawText("Player 2 Wins!", SCREEN_WIDTH * 0.5f - MeasureText("Player 2 Wins!", 30) * 0.5f, SCREEN_HEIGHT * 0.5f + 20, 30, GREEN);
+            }
+            if (game_over_timer >= 3.0f)
+            {
+                player1_score = 0;
+                player2_score = 0;
+                game_over_timer = 0.0f;
+                ResetBall(ball_position, ball_direction);
+            }
         }
 
         // Update ball position after collision resolution, then render
@@ -106,15 +160,17 @@ int main()
 
         BeginDrawing();
         ClearBackground(BLACK);
-        DrawRectangleRec(BallRec(ball_position), WHITE);
-        DrawRectangleRec(PaddleRec(paddle1_position), WHITE);
-        DrawRectangleRec(PaddleRec(paddle2_position), WHITE);
+        DrawRectangleRec(BallRec(ball_position), BLUE);
+        DrawRectangleRec(PaddleRec(paddle1_position), PURPLE);
+        DrawRectangleRec(PaddleRec(paddle2_position), PURPLE);
 
         // Text format requires you to put a '%i' wherever you want an integer, then add said integer after the comma
-        const char* test_score_text = TextFormat("Test Score: %i ", test_score);
+        const char* player1_score_text = TextFormat("Player1 Score: %i ", player1_score);
+        const char* player2_score_text = TextFormat("Player2 Score: %i ", player2_score);
 
         // We can measure our text for more exact positioning. This puts our score in the center of our screen!
-        DrawText(test_score_text, SCREEN_WIDTH * 0.5f - MeasureText(test_score_text, 20) * 0.5f, 50, 20, BLUE);
+        DrawText(player1_score_text, SCREEN_WIDTH * 0.1f - MeasureText(player1_score_text, 20) * 0.5f, 50, 20, GREEN);
+        DrawText(player2_score_text, SCREEN_WIDTH * 0.9f - MeasureText(player2_score_text, 20) * 0.5f, 50, 20, GREEN);
         EndDrawing();
     }
 
