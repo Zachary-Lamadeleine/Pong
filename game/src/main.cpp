@@ -140,11 +140,11 @@ int main()
             DrawText("Game Over!", SCREEN_WIDTH * 0.5f - MeasureText("Game Over!", 40) * 0.5f, SCREEN_HEIGHT * 0.5f - 20, 40, YELLOW);
             if (player1_score >= 5)
             {
-                DrawText("Player 1 Wins!", SCREEN_WIDTH * 0.5f - MeasureText("Player 1 Wins!", 30) * 0.5f, SCREEN_HEIGHT * 0.5f + 20, 30, RED);
+                DrawText("Player 1 Wins!", SCREEN_WIDTH * 0.3f - MeasureText("Player 1 Wins!", 30) * 0.5f, SCREEN_HEIGHT * 0.5f + 20, 30, RED);
             }
             if (player2_score >= 5)
             {
-                DrawText("Player 2 Wins!", SCREEN_WIDTH * 0.5f - MeasureText("Player 2 Wins!", 30) * 0.5f, SCREEN_HEIGHT * 0.5f + 20, 30, GREEN);
+                DrawText("Player 2 Wins!", SCREEN_WIDTH * 0.7f - MeasureText("Player 2 Wins!", 30) * 0.5f, SCREEN_HEIGHT * 0.5f + 20, 30, RED);
             }
             if (game_over_timer >= 3.0f)
             {
